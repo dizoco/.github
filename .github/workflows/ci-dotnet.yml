@@ -15,6 +15,10 @@ on:
         description: 'Directorio donde está la solución'
         type: string
         default: '.'
+      test-filter:
+        description: 'Filtro para dotnet test (--filter), ej. para excluir tests que requieren infraestructura'
+        type: string
+        default: ''
 
 jobs:
   build-test:
@@ -39,7 +43,14 @@ jobs:
         run: dotnet build --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test --configuration Release --no-build --verbosity normal
+        env:
+          TEST_FILTER: ${{ inputs.test-filter }}
+        run: |
+          if [ -n "$TEST_FILTER" ]; then
+            dotnet test --configuration Release --no-build --verbosity normal --filter "$TEST_FILTER"
+          else
+            dotnet test --configuration Release --no-build --verbosity normal
+          fi
 
       # ── Coverage (desactivado por ahora; descomentar para exigir cobertura mínima) ──
       # Requiere el paquete coverlet.collector en los proyectos de test.
