@@ -1,0 +1,38 @@
+name: Branch Flow
+
+# Workflow reusable: valida que la rama origen del PR sea válida según la rama destino.
+# main    <- develop | hotfix/*
+# develop <- feature/* | bugfix/* | hotfix/*
+
+on:
+  workflow_call: {}
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar rama origen según destino
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          echo "PR: $HEAD -> $BASE"
+          case "$BASE" in
+            main)
+              case "$HEAD" in
+                develop|hotfix/*) echo "OK" ;;
+                *)
+                  echo "::error::Los PRs a 'main' solo se aceptan desde 'develop' o 'hotfix/*'. Rama actual: '$HEAD'."
+                  exit 1 ;;
+              esac ;;
+            develop)
+              case "$HEAD" in
+                feature/*|bugfix/*|hotfix/*) echo "OK" ;;
+                *)
+                  echo "::error::Los PRs a 'develop' solo se aceptan desde 'feature/*', 'bugfix/*' o 'hotfix/*'. Rama actual: '$HEAD'."
+                  exit 1 ;;
+              esac ;;
+            *)
+              echo "OK (la rama destino '$BASE' no tiene restricciones de origen)" ;;
+          esac

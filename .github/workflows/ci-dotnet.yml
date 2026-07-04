@@ -1,0 +1,82 @@
+name: CI .NET
+
+# Workflow reusable para proyectos .NET: build + tests + dependencias vulnerables.
+# El análisis estático corre dentro del build vía analizadores Roslyn
+# (habilitados con Directory.Build.props en cada repo) y -warnaserror.
+
+on:
+  workflow_call:
+    inputs:
+      dotnet-version:
+        description: 'Versión del SDK de .NET (ej. 10.0.x)'
+        type: string
+        default: '10.0.x'
+      working-directory:
+        description: 'Directorio donde está la solución'
+        type: string
+        default: '.'
+
+jobs:
+  build-test:
+    name: build-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (analizadores + warnings como errores)
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+      # ── Coverage (desactivado por ahora; descomentar para exigir cobertura mínima) ──
+      # Requiere el paquete coverlet.collector en los proyectos de test.
+      # - name: Test con cobertura
+      #   run: dotnet test --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./coverage
+      # - name: Verificar umbral de cobertura (70%)
+      #   run: |
+      #     dotnet tool install --global dotnet-reportgenerator-globaltool
+      #     reportgenerator "-reports:coverage/**/coverage.cobertura.xml" -targetdir:coverage/report -reporttypes:TextSummary
+      #     cat coverage/report/Summary.txt
+      #     pct=$(grep -oP 'Line coverage:\s*\K[0-9.]+' coverage/report/Summary.txt)
+      #     echo "Cobertura: $pct%"
+      #     awk -v p="$pct" 'BEGIN { exit (p >= 70 ? 0 : 1) }' || { echo "::error::Cobertura $pct% por debajo del umbral (70%)"; exit 1; }
+
+  dependencies:
+    name: dependencies
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Paquetes NuGet vulnerables
+        run: |
+          dotnet list package --vulnerable --include-transitive | tee vulnerable.txt
+          if grep -q "has the following vulnerable packages" vulnerable.txt; then
+            echo "::error::Se encontraron paquetes NuGet con vulnerabilidades conocidas. Revisa la salida anterior."
+            exit 1
+          fi
+          echo "Sin dependencias vulnerables."

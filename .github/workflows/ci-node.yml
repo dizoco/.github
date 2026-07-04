@@ -1,0 +1,74 @@
+name: CI Node
+
+# Workflow reusable para proyectos Node/TypeScript: lint + typecheck + build + tests + npm audit.
+# Convención: los repos deben exponer los scripts `build`, `lint` y `test:run`
+# (los que falten se omiten gracias a --if-present).
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: 'Versión de Node.js'
+        type: string
+        default: '22'
+      working-directory:
+        description: 'Directorio donde está el package.json'
+        type: string
+        default: '.'
+
+jobs:
+  build-test:
+    name: build-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint --if-present
+
+      - name: Typecheck
+        run: npm run typecheck --if-present
+
+      - name: Build
+        run: npm run build --if-present
+
+      - name: Test
+        run: npm run test:run --if-present
+
+      # ── Coverage (desactivado por ahora; descomentar para exigir cobertura mínima) ──
+      # Requiere @vitest/coverage-v8 como devDependency y thresholds en vitest.config:
+      #   coverage: { thresholds: { lines: 70 } }
+      # - name: Test con cobertura
+      #   run: npm run test:run -- --coverage
+
+  dependencies:
+    name: dependencies
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Auditoría de dependencias (high o superior)
+        run: npm audit --audit-level=high

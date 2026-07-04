@@ -1,0 +1,42 @@
+name: Claude Code Review
+
+# Workflow reusable: Claude revisa el PR y deja comentarios.
+# Es informativo (no es un check requerido) para que una falla del servicio no bloquee merges.
+# Requiere el secreto de organización CLAUDE_CODE_OAUTH_TOKEN y la GitHub App de Claude
+# instalada en la org (https://github.com/apps/claude).
+
+on:
+  workflow_call:
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN:
+        required: true
+
+jobs:
+  review:
+    name: review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Claude review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Haz un code review de este PR y responde en español. Enfócate en:
+            - Bugs y errores de lógica
+            - Problemas de seguridad (inyección, secretos expuestos, validación de entradas)
+            - Calidad y mantenibilidad (duplicación, complejidad innecesaria)
+            Deja el review como comentario en el PR con `gh pr comment`.
+            Sé conciso: solo hallazgos accionables con referencia a archivo/línea; sin elogios genéricos.
+            Si no hay hallazgos relevantes, deja un único comentario breve indicando que el PR se ve bien.
+          claude_args: '--allowed-tools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/*)"'
