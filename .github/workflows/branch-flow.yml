@@ -7,6 +7,9 @@ name: Branch Flow
 on:
   workflow_call: {}
 
+permissions:
+  contents: read
+
 jobs:
   check:
     name: check
