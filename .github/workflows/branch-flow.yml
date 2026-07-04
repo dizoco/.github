@@ -28,9 +28,9 @@ jobs:
               esac ;;
             develop)
               case "$HEAD" in
-                feature/*|bugfix/*|hotfix/*) echo "OK" ;;
+                feature/*|bugfix/*|hotfix/*|dependabot/*|claude/*) echo "OK" ;;
                 *)
-                  echo "::error::Los PRs a 'develop' solo se aceptan desde 'feature/*', 'bugfix/*' o 'hotfix/*'. Rama actual: '$HEAD'."
+                  echo "::error::Los PRs a 'develop' solo se aceptan desde 'feature/*', 'bugfix/*', 'hotfix/*' (o ramas de dependabot/claude). Rama actual: '$HEAD'."
                   exit 1 ;;
               esac ;;
             *)

@@ -11,7 +11,9 @@
         "refs/heads/feature/**",
         "refs/heads/bugfix/**",
         "refs/heads/hotfix/**",
-        "refs/heads/release/**"
+        "refs/heads/release/**",
+        "refs/heads/dependabot/**",
+        "refs/heads/claude/**"
       ]
     }
   },

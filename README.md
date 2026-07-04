@@ -12,7 +12,7 @@ hotfix/z  ────────PR────────▶ main   (urgencia
 ```
 
 - **Nombres de rama permitidos**: `main`, `develop`, `feature/*`, `bugfix/*`, `hotfix/*`, `release/*`
-  (cualquier otro nombre es rechazado al hacer push).
+  (más `dependabot/*` y `claude/*` para automatizaciones). Cualquier otro nombre es rechazado al hacer push.
 - **main y develop** no aceptan pushes directos: todo entra por PR.
 - **PRs a develop** (desde `feature/*`, `bugfix/*`, `hotfix/*`) requieren en verde:
   `branch-flow / check`, `ci / build-test`, `ci / dependencies`.
