@@ -9,7 +9,10 @@ on:
   workflow_call:
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN:
-        required: true
+        # Opcional a propósito: con 'required: true' + 'secrets: inherit' el run
+        # falla en el arranque (startup_failure) sin mensaje útil. Si falta el
+        # secreto, el step de review falla con un error claro en el log.
+        required: false
 
 jobs:
   review:
