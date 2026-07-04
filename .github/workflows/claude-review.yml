@@ -34,12 +34,13 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # Un solo comentario que se actualiza en cada push, en vez de acumular comentarios
+          use_sticky_comment: true
           prompt: |
             Haz un code review de este PR y responde en español. Enfócate en:
             - Bugs y errores de lógica
             - Problemas de seguridad (inyección, secretos expuestos, validación de entradas)
             - Calidad y mantenibilidad (duplicación, complejidad innecesaria)
-            Deja el review como comentario en el PR con `gh pr comment`.
+            Publica el review como comentario en el PR usando tus herramientas de comentario.
             Sé conciso: solo hallazgos accionables con referencia a archivo/línea; sin elogios genéricos.
             Si no hay hallazgos relevantes, deja un único comentario breve indicando que el PR se ve bien.
-          claude_args: '--allowed-tools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/*)"'
