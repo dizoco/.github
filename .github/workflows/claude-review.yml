@@ -34,13 +34,17 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Un solo comentario que se actualiza en cada push, en vez de acumular comentarios
-          use_sticky_comment: true
+          # La action publica el reporte de Claude en su comentario de tracking del PR
+          track_progress: true
           prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
             Haz un code review de este PR y responde en español. Enfócate en:
             - Bugs y errores de lógica
             - Problemas de seguridad (inyección, secretos expuestos, validación de entradas)
             - Calidad y mantenibilidad (duplicación, complejidad innecesaria)
-            Publica el review como comentario en el PR usando tus herramientas de comentario.
+            Usa comentarios inline para hallazgos en líneas concretas.
             Sé conciso: solo hallazgos accionables con referencia a archivo/línea; sin elogios genéricos.
-            Si no hay hallazgos relevantes, deja un único comentario breve indicando que el PR se ve bien.
+            Si no hay hallazgos relevantes, dilo brevemente en tu reporte final.
+          claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"'
