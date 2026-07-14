@@ -1,0 +1,60 @@
+name: CD .NET → Azure App Service
+
+# Workflow reusable de despliegue para proyectos .NET vía zip deploy nativo
+# (dotnet publish + azure/webapps-deploy). Pensado para App Service Linux
+# en el plan Free compartido rg-dyzoco-common / asp-dyzoco-linux.
+# Para servicios que necesitan dependencias de sistema (ej. Playwright/Chromium)
+# usa en su lugar el patrón Docker+ACR (ver ci-cd.yml de PdfGeneratorService).
+
+on:
+  workflow_call:
+    inputs:
+      dotnet-version:
+        description: 'Versión del SDK de .NET (ej. 10.0.x)'
+        type: string
+        default: '10.0.x'
+      working-directory:
+        description: 'Directorio donde está la solución'
+        type: string
+        default: '.'
+      project-path:
+        description: 'Ruta al .csproj a publicar (relativa a working-directory)'
+        type: string
+        required: true
+      app-name:
+        description: 'Nombre del Azure App Service destino'
+        type: string
+        required: true
+    secrets:
+      publish-profile:
+        description: 'Publish profile del App Service (secreto AZURE_WEBAPP_PUBLISH_PROFILE del repo)'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    name: build-and-deploy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+
+      - name: Publish
+        run: dotnet publish ${{ inputs.project-path }} -c Release -o ${{ github.workspace }}/publish
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ inputs.app-name }}
+          publish-profile: ${{ secrets.publish-profile }}
+          package: ${{ github.workspace }}/publish
